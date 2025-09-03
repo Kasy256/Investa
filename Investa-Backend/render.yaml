@@ -4,7 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: |
-      pip install --upgrade pip
+      pip install --upgrade pip setuptools wheel
       pip install -r Investa-Backend/requirements.txt
     startCommand: cd Investa-Backend && gunicorn --bind 0.0.0.0:$PORT main:app
     envVars:
