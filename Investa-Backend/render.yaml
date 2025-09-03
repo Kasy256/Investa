@@ -2,9 +2,11 @@ services:
   - type: web
     name: Investa-backend
     env: python
-    buildCommand: ""
-    startCommand: gunicorn main:app
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT main:app
     plan: free
     envVars:
       - key: BASE_URL
         value: https://investa-backend-fmqg.onrender.com
+      - key: PYTHON_VERSION
+        value: 3.11.0
