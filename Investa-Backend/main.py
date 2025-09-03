@@ -1,8 +1,3 @@
-"""
-Investa Backend - Investment Platform API
-Production-ready Flask backend with Firebase Auth and MongoDB
-"""
-
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_pymongo import PyMongo
@@ -126,3 +121,5 @@ if __name__ == '__main__':
     print(f"🔧 Debug: {debug}")
     
     app.run(debug=debug, host=host, port=port)
+
+    app = create_app()
