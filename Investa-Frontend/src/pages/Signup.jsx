@@ -146,6 +146,7 @@ const Signup = () => {
                 className="auth-form-select"
                 disabled={loading}
               >
+                <option value="">Select your risk preference</option>
                 <option value="conservative">Conservative</option>
                 <option value="moderate">Moderate</option>
                 <option value="aggressive">Aggressive</option>
