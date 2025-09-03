@@ -9,7 +9,7 @@ const Signup = () => {
     password: "",
     confirmPassword: "",
     displayName: "",
-    riskPreference: "moderate",
+    riskPreference: "Select your risk preference",
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
