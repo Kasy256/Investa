@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: investa-backend
+    env: python
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r Investa-Backend/requirements.txt
+    startCommand: cd Investa-Backend && gunicorn --bind 0.0.0.0:$PORT main:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PIP_NO_CACHE_DIR
+        value: 1
+      - key: PIP_DISABLE_PIP_VERSION_CHECK
+        value: 1
+    healthCheckPath: /health

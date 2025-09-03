@@ -10,9 +10,10 @@ pymongo[srv]==4.5.0
 # Data Validation
 pydantic==2.4.2
 
-# Authentication - Use pre-compiled wheels to avoid Rust compilation
+# Authentication - Use specific versions that work well on Render
 firebase-admin==6.2.0
 cryptography==41.0.7
+pycryptodome==3.19.0
 
 # HTTP Client
 requests==2.31.0
@@ -23,6 +24,6 @@ python-dotenv==1.0.0
 # Production Server
 gunicorn==21.2.0
 
-# Development Tools (optional)
-pytest==7.4.2
-pytest-flask==1.2.0
+# Additional dependencies for Render
+setuptools==68.2.2
+wheel==0.41.2
