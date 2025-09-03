@@ -1,0 +1,14 @@
+/* Global base imports (pure CSS). Remove unsupported Tailwind directives for Vite-only setup. */
+@import "../styles/variables.css";
+@import "../styles/base.css";
+@import "../styles/components.css";
+
+/* Global base styles */
+* {
+  border-color: var(--border-light);
+}
+
+body {
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+}

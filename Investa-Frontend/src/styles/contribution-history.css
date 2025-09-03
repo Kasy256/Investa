@@ -1,0 +1,347 @@
+/* Contribution History Page Styles */
+
+.contribution-history-container {
+  max-width: 1536px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+}
+
+/* Header */
+.contribution-history-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-8);
+}
+
+.contribution-history-header-info h1 {
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.contribution-history-header-info p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.contribution-history-back-btn {
+  margin-top: var(--space-4);
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.contribution-history-back-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Stats Overview */
+.contribution-history-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.contribution-history-stat-card {
+  background-color: var(--background-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.contribution-history-stat-value {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.contribution-history-stat-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Filter Tabs */
+.contribution-history-filters {
+  background-color: var(--background-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.contribution-history-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.contribution-history-filter-tab {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.contribution-history-filter-tab.active {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+}
+
+.contribution-history-filter-tab:not(.active) {
+  color: var(--text-muted);
+  background: none;
+}
+
+.contribution-history-filter-tab:not(.active):hover {
+  color: var(--text-primary);
+  background-color: var(--background-muted);
+}
+
+.contribution-history-filter-count {
+  font-size: var(--text-xs);
+}
+
+/* Contributions Table */
+.contribution-history-table-card {
+  background-color: var(--background-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.contribution-history-empty {
+  text-align: center;
+  padding: var(--space-12) 0;
+}
+
+.contribution-history-empty-icon {
+  width: 64px;
+  height: 64px;
+  background-color: var(--background-muted);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-4);
+}
+
+.contribution-history-empty-icon svg {
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+}
+
+.contribution-history-empty h3 {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.contribution-history-empty p {
+  color: var(--text-muted);
+  margin-bottom: var(--space-4);
+}
+
+.contribution-history-empty-btn {
+  background-color: var(--primary-color);
+  color: var(--text-white);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-medium);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.contribution-history-empty-btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.contribution-history-table-wrapper {
+  overflow-x: auto;
+}
+
+.contribution-history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.contribution-history-table thead {
+  background-color: var(--background-muted);
+}
+
+.contribution-history-table th {
+  padding: var(--space-4) var(--space-6);
+  text-align: left;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.contribution-history-table tbody {
+  border-top: 1px solid var(--border-light);
+}
+
+.contribution-history-table tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color 0.2s ease;
+}
+
+.contribution-history-table tbody tr:hover {
+  background-color: rgba(148, 163, 184, 0.05);
+}
+
+.contribution-history-table td {
+  padding: var(--space-4) var(--space-6);
+  vertical-align: top;
+}
+
+/* Table Cell Content */
+.contribution-history-room-link {
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.contribution-history-room-link:hover {
+  color: var(--primary-color);
+}
+
+.contribution-history-amount {
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+}
+
+.contribution-history-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+}
+
+.contribution-history-status-badge.completed {
+  color: #16a34a;
+  background-color: rgba(22, 163, 74, 0.1);
+}
+
+.contribution-history-status-badge.pending {
+  color: #d97706;
+  background-color: rgba(217, 119, 6, 0.1);
+}
+
+.contribution-history-status-badge.failed {
+  color: #dc2626;
+  background-color: rgba(220, 38, 38, 0.1);
+}
+
+.contribution-history-failure-reason {
+  font-size: var(--text-xs);
+  color: var(--error-color);
+  margin-top: var(--space-1);
+}
+
+.contribution-history-payment-method {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.contribution-history-payment-method svg {
+  width: 16px;
+  height: 16px;
+}
+
+.contribution-history-payment-text {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.contribution-history-date {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.contribution-history-time {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.contribution-history-transaction-id {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* Loading State */
+.contribution-history-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 384px;
+}
+
+.contribution-history-loading-content {
+  text-align: center;
+}
+
+.contribution-history-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 4px solid var(--primary-color);
+  border-top: 4px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto var(--space-4);
+}
+
+.contribution-history-loading-text {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Media Queries - All @media rules moved to the end */
+@media (min-width: 640px) {
+  .contribution-history-container {
+    padding: var(--space-8) var(--space-6);
+  }
+  
+  .contribution-history-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .contribution-history-back-btn {
+    margin-top: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .contribution-history-container {
+    padding: var(--space-8);
+  }
+}
+
+@media (min-width: 768px) {
+  .contribution-history-stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
