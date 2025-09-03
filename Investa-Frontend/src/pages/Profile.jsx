@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { fetchUserProfile, updateUserProfile, fetchUserStats } from "../api/users"
 import { formatMoney } from "../utils/currency"
+import {useAutoRefresh} from "../hooks/useAutoRefresh"
 import "../styles/profile.css"
 
 const Profile = ({ user, setUser }) => {

@@ -184,14 +184,6 @@ const Wallet = ({ user }) => {
             <h1 className="wallet-title">My Wallet</h1>
             <p className="wallet-subtitle">Manage your funds, transactions, and withdrawals</p>
           </div>
-          <button 
-            onClick={refreshWalletData} 
-            disabled={refreshing}
-            className="refresh-btn"
-            title="Refresh wallet data"
-          >
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </button>
         </div>
 
         {/* Balance Overview */}
