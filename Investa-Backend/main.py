@@ -15,7 +15,6 @@ def create_app():
     app = Flask(__name__)
     
     # Core configuration
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
     app.config['MONGO_URI'] = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/investa_db')
     
     # CORS setup
@@ -109,9 +108,10 @@ def initialize_firebase():
         print(f"Firebase initialization failed: {e}")
         raise
 
+# Create top-level app instance for Gunicorn
+app = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
-    
     debug = os.getenv('FLASK_ENV') == 'development'
     host = os.getenv('HOST', '0.0.0.0')
     port = int(os.getenv('PORT', 5000))
@@ -121,5 +121,3 @@ if __name__ == '__main__':
     print(f"🔧 Debug: {debug}")
     
     app.run(debug=debug, host=host, port=port)
-
-    app = create_app()
