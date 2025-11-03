@@ -2,7 +2,6 @@ import { useState, useEffect } from "react"
 import { fetchUserRooms, fetchPublicRooms, joinRoom, createRoom } from "../api/rooms"
 import RoomCard from "../components/RoomCard"
 import { formatMoney } from "../utils/currency"
-import { useAutoRefresh } from "../hooks/useAutoRefresh"
 import "../styles/dashboard.css"
 
 const Dashboard = ({ user }) => {
@@ -16,6 +15,9 @@ const Dashboard = ({ user }) => {
 
   // Load dashboard data function
   const loadDashboardData = async () => {
+    // Don't refresh if forms are being used
+    if (showCreateForm || joinLoading || createLoading) return
+    
     try {
       const [userRooms, pubRooms] = await Promise.all([fetchUserRooms(), fetchPublicRooms()])
       setRooms(userRooms)
@@ -42,8 +44,10 @@ const Dashboard = ({ user }) => {
     }
   }, [])
 
-  // Auto-refresh dashboard data every 5 seconds
-  const { manualRefresh } = useAutoRefresh(loadDashboardData, 5000, true)
+  // Manual refresh function for dashboard data
+  const refreshDashboardData = async () => {
+    await loadDashboardData()
+  }
 
   const handleJoinRoom = async (e) => {
     e.preventDefault()
@@ -83,6 +87,17 @@ const Dashboard = ({ user }) => {
           <p>Welcome back, {user?.displayName || user?.email?.split("@")[0]}! Manage your investment rooms below.</p>
         </div>
         <div className="dashboard-header-actions">
+          <button 
+            onClick={refreshDashboardData}
+            className="refresh-votes-btn"
+            title="Refresh dashboard data"
+            disabled={showCreateForm || joinLoading || createLoading}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
           <button onClick={() => setShowCreateForm(true)} className="dashboard-create-btn">
             Create Room
           </button>

@@ -45,8 +45,39 @@
   margin: 0;
 }
 
+.investment-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .investment-amount {
   text-align: right;
+}
+
+.refresh-votes-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-votes-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.refresh-votes-btn:active {
+  transform: translateY(1px);
 }
 
 .investment-amount-value {

@@ -122,7 +122,11 @@ class WithdrawalService:
                 room_name=None,
                 paystack_reference=paystack_reference
             )
-            self.wallet_service.create_transaction(transaction_data)
+            transaction = self.wallet_service.create_transaction(transaction_data)
+            
+            # Mark transaction as completed
+            if transaction:
+                self.wallet_service.update_transaction_status(transaction.id, 'completed', datetime.utcnow())
             
             # Update withdrawal status to completed
             self.update_withdrawal_status(withdrawal_id, 'completed', paystack_reference, datetime.utcnow())

@@ -5,7 +5,6 @@ import { fetchRoom } from "../api/rooms"
 import { fetchInvestmentRecommendations } from "../api/analytics"
 import { castVote, fetchVoteAggregate, executeInvestment, voteStopInvestment, fetchStopVoteAggregate, endInvestment } from "../api/investments"
 import { formatMoney } from "../utils/currency"
-import { useAutoRefresh } from "../hooks/useAutoRefresh"
 import "../styles/investment.css"
 
 const InvestmentPage = ({ user }) => {
@@ -19,15 +18,47 @@ const InvestmentPage = ({ user }) => {
   const [stopAggs, setStopAggs] = useState({})
   const [showEndInvestment, setShowEndInvestment] = useState(false)
   const [endInvestmentSummary, setEndInvestmentSummary] = useState(null)
+  const [isVoting, setIsVoting] = useState(false)
 
   // Load room data function
   const loadRoomData = async () => {
+    // Don't refresh if user is currently voting
+    if (isVoting) return
+    
     try {
       const roomData = await fetchRoom(roomId)
       const recs = await fetchInvestmentRecommendations(roomData)
       setRoom(roomData)
-      setRecommendations(recs)
-      setUserVotes({})
+      
+      // Preserve existing vote data when updating recommendations
+      setRecommendations((prevRecs) => {
+        // If we have existing recommendations with vote data, preserve it
+        if (prevRecs.length > 0 && prevRecs[0].votes) {
+          return recs.map(newRec => {
+            const existingRec = prevRecs.find(prev => prev.id === newRec.id)
+            if (existingRec && existingRec.votes) {
+              // Preserve the existing vote data
+              return { ...newRec, votes: existingRec.votes }
+            }
+            // For new recommendations, use default vote structure
+            return { 
+              ...newRec, 
+              votes: { 
+                approve: 0, 
+                reject: 0, 
+                pending: Math.max(0, roomData?.members || 0) 
+              } 
+            }
+          })
+        }
+        // Otherwise, use the fresh recommendations
+        return recs
+      })
+      
+      // Only reset userVotes if not currently voting
+      if (!isVoting) {
+        setUserVotes({})
+      }
       const qs = new URLSearchParams(window.location.search)
       const m = qs.get("mode")
       setMode(m === "stop" ? "stop" : "vote")
@@ -51,13 +82,15 @@ const InvestmentPage = ({ user }) => {
     }
   }, [roomId])
 
-  // Auto-refresh room data every 5 seconds
-  const { manualRefresh } = useAutoRefresh(loadRoomData, 5000, true, [roomId])
+  // Manual refresh function for room data
+  const refreshRoomData = async () => {
+    await loadRoomData()
+  }
 
-  // Auto-poll approve/reject aggregates in vote mode so users see live progress
+  // Fetch vote aggregates once when entering vote mode (no automatic refresh)
   useEffect(() => {
     let cancelled = false
-    async function refreshAggs() {
+    async function loadVoteAggs() {
       if (mode !== 'vote' || !room || recommendations.length === 0) return
       const updates = await Promise.all(
         recommendations.map(async (rec) => {
@@ -79,10 +112,9 @@ const InvestmentPage = ({ user }) => {
         }))
       }
     }
-    // Initial fetch and interval
-    refreshAggs()
-    const intervalId = setInterval(refreshAggs, 5000)
-    return () => { cancelled = true; clearInterval(intervalId) }
+    // Only fetch once when entering vote mode
+    loadVoteAggs()
+    return () => { cancelled = true }
   }, [mode, room?.id, room?.members, recommendations])
 
   // Fetch per-asset stop vote aggregates when in stop mode
@@ -110,38 +142,39 @@ const InvestmentPage = ({ user }) => {
     return () => { cancelled = true }
   }, [mode, room?.id, recommendations])
 
-  // Auto-poll aggregates every 5s in stop mode
-  useEffect(() => {
-    if (mode !== 'stop' || !room) return
-    const intervalId = setInterval(async () => {
-      try {
-        const actives = recommendations.filter(r => r.allocation > 0)
-        const entries = await Promise.all(
-          actives.map(async (r) => {
-            try {
-              const agg = await fetchStopVoteAggregate(room.id, r.id)
-              return [r.id, agg]
-            } catch {
-              return [r.id, null]
-            }
-          })
-        )
-        const map = Object.fromEntries(entries)
-        setStopAggs(map)
-      } catch {}
-    }, 5000)
-    return () => clearInterval(intervalId)
-  }, [mode, room?.id, recommendations])
+  // Manual refresh function for stop vote aggregates
+  const refreshStopAggregates = async () => {
+    if (mode !== 'stop' || !room || isVoting) return
+    try {
+      const actives = recommendations.filter(r => r.allocation > 0)
+      const entries = await Promise.all(
+        actives.map(async (r) => {
+          try {
+            const agg = await fetchStopVoteAggregate(room.id, r.id)
+            return [r.id, agg]
+          } catch {
+            return [r.id, null]
+          }
+        })
+      )
+      const map = Object.fromEntries(entries)
+      setStopAggs(map)
+    } catch (error) {
+      console.error("Error refreshing stop aggregates:", error)
+    }
+  }
 
   const generateRecommendations = () => []
 
   const handleVote = async (recommendationId, voteType) => {
-    if (!room) return
+    if (!room || isVoting) return
+    
+    setIsVoting(true)
     try {
       await castVote({ roomId: room.id, recommendationId, vote: voteType })
       const agg = await fetchVoteAggregate(room.id, recommendationId)
       setUserVotes((prev) => ({ ...prev, [recommendationId]: voteType }))
-    setRecommendations((prev) =>
+      setRecommendations((prev) =>
         prev.map((rec) =>
           rec.id === recommendationId
             ? { ...rec, votes: { approve: agg.approve, reject: agg.reject, pending: Math.max(0, (room.members || 0) - agg.approve - agg.reject) } }
@@ -149,7 +182,38 @@ const InvestmentPage = ({ user }) => {
         ),
       )
     } catch (e) {
-      // no-op for now
+      console.error("Error casting vote:", e)
+    } finally {
+      // Resume refresh after a short delay to ensure vote is processed
+      setTimeout(() => {
+        setIsVoting(false)
+      }, 1000)
+    }
+  }
+
+  // Manual refresh function for vote aggregates (can be called when needed)
+  const refreshVoteAggregates = async () => {
+    if (mode !== 'vote' || !room || recommendations.length === 0) return
+    try {
+      const updates = await Promise.all(
+        recommendations.map(async (rec) => {
+          try {
+            const agg = await fetchVoteAggregate(room.id, rec.id)
+            const approve = Number(agg?.approve || 0)
+            const reject = Number(agg?.reject || 0)
+            const pending = Math.max(0, Number(room.members || 0) - approve - reject)
+            return { id: rec.id, votes: { approve, reject, pending } }
+          } catch {
+            return { id: rec.id, votes: rec.votes }
+          }
+        })
+      )
+      setRecommendations((prev) => prev.map((rec) => {
+        const found = updates.find(u => u.id === rec.id)
+        return found ? { ...rec, votes: found.votes } : rec
+      }))
+    } catch (error) {
+      console.error("Error refreshing vote aggregates:", error)
     }
   }
 
@@ -211,9 +275,9 @@ const InvestmentPage = ({ user }) => {
       if (result?.success) {
         setEndInvestmentSummary(result.summary)
         setShowEndInvestment(true)
-        // After showing summary, navigate to dashboard
+        // After showing summary, navigate to wallet to see the updated balance
         setTimeout(() => {
-          navigate("/dashboard")
+          navigate("/wallet")
         }, 5000)
       }
     } catch (error) {
@@ -240,9 +304,29 @@ const InvestmentPage = ({ user }) => {
           </p>
         </div>
 
-        <div className="investment-amount">
-          <div className="investment-amount-value">{formatMoney(room.collected)}</div>
-          <div className="investment-amount-label">Available to Invest</div>
+        <div className="investment-header-right">
+          <div className="investment-amount">
+            <div className="investment-amount-value">{formatMoney(room.collected)}</div>
+            <div className="investment-amount-label">Available to Invest</div>
+          </div>
+          <button 
+            onClick={async () => {
+              await refreshRoomData()
+              if (mode === "vote") {
+                await refreshVoteAggregates()
+              } else if (mode === "stop") {
+                await refreshStopAggregates()
+              }
+            }}
+            className="refresh-votes-btn"
+            title="Refresh all data"
+            disabled={isVoting}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
         </div>
       </div>
 
@@ -329,6 +413,7 @@ const InvestmentPage = ({ user }) => {
                 onVote={handleVote}
                 totalMembers={totalVotes}
                 roomAmount={room.collected}
+                isVoting={isVoting}
               />
               ) : (
                 <div key={recommendation.id} className="approved-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -20,7 +20,6 @@ import TopUpModal from "../components/TopUpModal"
 import WithdrawalModal from "../components/WithdrawalModal"
 import { fetchWallet, fetchWalletTransactions, topup, requestWithdrawal } from "../api/wallet"
 import { formatMoney } from "../utils/currency"
-import { useAutoRefresh } from "../hooks/useAutoRefresh"
 
 const Wallet = ({ user }) => {
   const [wallet, setWallet] = useState(null)
@@ -32,6 +31,7 @@ const Wallet = ({ user }) => {
   const [showTopUp, setShowTopUp] = useState(false)
   const [filter, setFilter] = useState("all")
   const [refreshing, setRefreshing] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -54,32 +54,6 @@ const Wallet = ({ user }) => {
     }
   }, [])
 
-  // Refresh wallet data when component becomes visible (e.g., after navigation)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !loading) {
-        // Refresh wallet data when page becomes visible
-        async function refresh() {
-          try {
-            const [w, txns] = await Promise.all([
-              fetchWallet(),
-              fetchWalletTransactions(),
-            ])
-            setWallet(w || { balance: 0, totalDeposited: 0, totalWithdrawn: 0, totalReturns: 0, currency: "KES" })
-            setTransactions(txns)
-          } catch (error) {
-            console.error("Error refreshing wallet data:", error)
-          }
-        }
-        refresh()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [loading])
 
   const getTransactionIcon = (type) => {
     switch (type) {
@@ -144,6 +118,9 @@ const Wallet = ({ user }) => {
 
 
   const refreshWalletData = async () => {
+    // Don't refresh if modals are open
+    if (isModalOpen) return
+    
     setRefreshing(true)
     try {
       const [w, txns] = await Promise.all([
@@ -159,8 +136,6 @@ const Wallet = ({ user }) => {
     }
   }
 
-  // Auto-refresh wallet data every 5 seconds
-  const { manualRefresh } = useAutoRefresh(refreshWalletData, 5000, true)
 
 
 
@@ -184,6 +159,17 @@ const Wallet = ({ user }) => {
             <h1 className="wallet-title">My Wallet</h1>
             <p className="wallet-subtitle">Manage your funds, transactions, and withdrawals</p>
           </div>
+          <button 
+            onClick={refreshWalletData}
+            className="refresh-votes-btn"
+            title="Refresh wallet data"
+            disabled={refreshing || isModalOpen}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
 
         {/* Balance Overview */}
@@ -200,14 +186,20 @@ const Wallet = ({ user }) => {
             </div>
             <div className="balance-actions">
               <button 
-                onClick={() => setShowTopUp(true)} 
+                onClick={() => {
+                  setShowTopUp(true)
+                  setIsModalOpen(true)
+                }} 
                 className="balance-action-btn deposit"
               >
                 <Plus />
                 Top-up
               </button>
               <button 
-                onClick={() => setShowWithdraw(true)} 
+                onClick={() => {
+                  setShowWithdraw(true)
+                  setIsModalOpen(true)
+                }} 
                 className="balance-action-btn withdraw"
                 disabled={wallet.balance <= 0}
               >
@@ -388,7 +380,10 @@ const Wallet = ({ user }) => {
               <div className="withdrawals-header">
                 <h3>Withdrawal History</h3>
                 <button 
-                  onClick={() => setShowWithdraw(true)} 
+                  onClick={() => {
+                    setShowWithdraw(true)
+                    setIsModalOpen(true)
+                  }} 
                   className="new-withdrawal-btn"
                   disabled={wallet.balance <= 0}
                 >
@@ -445,7 +440,10 @@ const Wallet = ({ user }) => {
          <TopUpModal 
            wallet={wallet}
            userEmail={user?.email}
-           onClose={() => setShowTopUp(false)}
+           onClose={() => {
+             setShowTopUp(false)
+             setIsModalOpen(false)
+           }}
            onSuccess={async () => {
              try {
                const [w, txns] = await Promise.all([
@@ -455,7 +453,8 @@ const Wallet = ({ user }) => {
                setWallet(w)
                setTransactions(txns)
              } finally {
-             setShowTopUp(false)
+               setShowTopUp(false)
+               setIsModalOpen(false)
              }
            }}
          />
@@ -466,7 +465,10 @@ const Wallet = ({ user }) => {
          <WithdrawalModal 
            wallet={wallet}
            userEmail={user?.email}
-           onClose={() => setShowWithdraw(false)}
+           onClose={() => {
+             setShowWithdraw(false)
+             setIsModalOpen(false)
+           }}
            onSuccess={async () => {
              try {
                const [w, txns] = await Promise.all([
@@ -476,7 +478,8 @@ const Wallet = ({ user }) => {
                setWallet(w)
                setTransactions(txns)
              } finally {
-             setShowWithdraw(false)
+               setShowWithdraw(false)
+               setIsModalOpen(false)
              }
            }}
          />

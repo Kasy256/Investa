@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import { fetchUserProfile, updateUserProfile, fetchUserStats } from "../api/users"
 import { formatMoney } from "../utils/currency"
-import {useAutoRefresh} from "../hooks/useAutoRefresh"
 import "../styles/profile.css"
 
 const Profile = ({ user, setUser }) => {
@@ -19,6 +18,9 @@ const Profile = ({ user, setUser }) => {
 
   // Fetch user stats on component mount
   const loadUserStats = async () => {
+    // Don't refresh if user is editing profile
+    if (isEditing) return
+    
     try {
       setStatsLoading(true)
       const stats = await fetchUserStats()
@@ -34,8 +36,10 @@ const Profile = ({ user, setUser }) => {
     loadUserStats()
   }, [])
 
-  // Auto-refresh user stats every 5 seconds
-  const { manualRefresh } = useAutoRefresh(loadUserStats, 5000, true)
+  // Manual refresh function for user stats
+  const refreshUserStats = async () => {
+    await loadUserStats()
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -149,11 +153,26 @@ const Profile = ({ user, setUser }) => {
             <h1>Profile</h1>
             <p>Manage your account settings and preferences</p>
           </div>
-          {!isEditing && (
-            <button onClick={() => setIsEditing(true)} className="profile-edit-btn">
-              Edit Profile
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {!isEditing && (
+              <button 
+                onClick={refreshUserStats}
+                className="refresh-votes-btn"
+                title="Refresh profile stats"
+                disabled={statsLoading}
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            )}
+            {!isEditing && (
+              <button onClick={() => setIsEditing(true)} className="profile-edit-btn">
+                Edit Profile
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Success Message */}

@@ -20,7 +20,6 @@ import { fetchDashboardAnalytics, fetchPerformanceMetrics } from "../api/analyti
 import { fetchRoomInvestmentAnalytics } from "../api/investments"
 import { useLocation } from "react-router-dom"
 import { formatMoney } from "../utils/currency"
-import { useAutoRefresh } from "../hooks/useAutoRefresh"
 
 const Analytics = () => {
   const [timeRange, setTimeRange] = useState("6M")
@@ -53,32 +52,6 @@ const Analytics = () => {
     return () => { isMounted = false }
   }, [timeRange, roomId])
 
-  // Auto-refresh analytics data when page becomes visible (e.g., after navigation)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !loading) {
-        // Refresh analytics data when page becomes visible
-        async function refresh() {
-          try {
-            const tasks = [fetchDashboardAnalytics(), fetchPerformanceMetrics(timeRange)]
-            if (roomId) tasks.push(fetchRoomInvestmentAnalytics(roomId))
-            const [dash, perf, ra] = await Promise.all(tasks)
-            setDashboard(dash)
-            setMetrics(perf)
-            if (roomId) setRoomAnalytics(ra)
-          } catch (error) {
-            console.error("Error refreshing analytics data:", error)
-          }
-        }
-        refresh()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [loading, timeRange, roomId])
 
   // Manual refresh function
   const refreshAnalytics = async () => {
@@ -97,8 +70,6 @@ const Analytics = () => {
     }
   }
 
-  // Auto-refresh analytics data every 5 seconds
-  const { manualRefresh } = useAutoRefresh(refreshAnalytics, 5000, true, [timeRange, roomId])
 
   // Get time range periods based on selection
   const getTimeRangePeriods = () => {
@@ -290,6 +261,17 @@ const Analytics = () => {
             <h1 className="analytics-title">Investment Analytics</h1>
             <p className="analytics-subtitle">Track your investment performance and portfolio insights</p>
           </div>
+          <button 
+            onClick={refreshAnalytics}
+            className="refresh-votes-btn"
+            title="Refresh analytics data"
+            disabled={refreshing}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
 
         {/* Key Metrics Cards */}

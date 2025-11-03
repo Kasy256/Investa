@@ -1,11 +1,12 @@
 import { useState } from "react"
 import "../styles/recommendation-card.css"
 
-const RecommendationCard = ({ recommendation, userVote, onVote, totalMembers, roomAmount }) => {
+const RecommendationCard = ({ recommendation, userVote, onVote, totalMembers, roomAmount, isVoting = false }) => {
   const [showDetails, setShowDetails] = useState(false)
   const [voting, setVoting] = useState(false)
 
   const handleVote = async (voteType) => {
+    if (isVoting || voting) return
     setVoting(true)
     await onVote(recommendation.id, voteType)
     setTimeout(() => setVoting(false), 500)
@@ -116,13 +117,18 @@ const RecommendationCard = ({ recommendation, userVote, onVote, totalMembers, ro
       <div className="voting-buttons">
         <button
           onClick={() => handleVote("approve")}
-          disabled={voting}
-          className={`vote-button approve ${userVote === "approve" ? "active" : ""}`}
+          disabled={voting || isVoting}
+          className={`vote-button approve ${userVote === "approve" ? "active" : ""} ${isVoting ? "disabled" : ""}`}
         >
           {voting && userVote !== "approve" ? (
             <div>
               <div className="voting-spinner"></div>
               Voting...
+            </div>
+          ) : isVoting ? (
+            <div>
+              <div className="voting-spinner"></div>
+              Processing...
             </div>
           ) : (
             <>✓ Approve</>
@@ -131,13 +137,18 @@ const RecommendationCard = ({ recommendation, userVote, onVote, totalMembers, ro
 
         <button
           onClick={() => handleVote("reject")}
-          disabled={voting}
-          className={`vote-button reject ${userVote === "reject" ? "active" : ""}`}
+          disabled={voting || isVoting}
+          className={`vote-button reject ${userVote === "reject" ? "active" : ""} ${isVoting ? "disabled" : ""}`}
         >
           {voting && userVote !== "reject" ? (
             <div>
               <div className="voting-spinner"></div>
               Voting...
+            </div>
+          ) : isVoting ? (
+            <div>
+              <div className="voting-spinner"></div>
+              Processing...
             </div>
           ) : (
             <>✗ Reject</>

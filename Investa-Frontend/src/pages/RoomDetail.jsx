@@ -65,17 +65,16 @@ const RoomDetail = ({ user }) => {
     if (wantsContribute) setShowContribute(true)
   }, [location.search])
 
-  // Auto-poll stop vote aggregate every 5s when execution exists and room not closed
-  useEffect(() => {
-    if (!room?.hasExecution || room?.status === 'closed') return
-    const intervalId = setInterval(async () => {
-      try {
-        const agg = await fetchStopVoteAggregate(room.id)
-        setStopVotes(agg)
-      } catch {}
-    }, 5000)
-    return () => clearInterval(intervalId)
-  }, [room?.id, room?.hasExecution, room?.status])
+  // Manual refresh function for stop vote aggregate
+  const refreshStopVotes = async () => {
+    if (!room?.hasExecution || room?.status === 'closed' || showContribute) return
+    try {
+      const agg = await fetchStopVoteAggregate(room.id)
+      setStopVotes(agg)
+    } catch (error) {
+      console.error("Error refreshing stop votes:", error)
+    }
+  }
 
   const handleLeaveRoom = async () => {
     if (room?.isCreator) {
@@ -196,6 +195,22 @@ const RoomDetail = ({ user }) => {
         </div>
 
         <div className="room-detail-actions">
+          <button 
+            onClick={async () => {
+              await refreshRoom()
+              if (room?.hasExecution) {
+                await refreshStopVotes()
+              }
+            }}
+            className="room-detail-btn secondary"
+            disabled={actionLoading || showContribute}
+            title="Refresh room data"
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16" style={{ marginRight: '4px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
           {room.status === "ready" && !room.hasExecution && (
             <Link to={`/investment/${room.id}`} className="room-detail-btn accent">
               Invest Now

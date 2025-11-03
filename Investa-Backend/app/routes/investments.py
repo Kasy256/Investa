@@ -209,14 +209,57 @@ def stop_investment():
                 # Member stakes from room_members.contribution_amount
                 members = list(db.room_members.find({ 'room_id': room_id, 'status': 'active' }))
                 total_stake = sum(float(m.get('contribution_amount', 0) or 0) for m in members) or 1.0
+                
+                # Import services for proper transaction creation
+                from app.services.wallet_service import WalletService
+                from app.services.user_service import UserService
+                from app.models.wallet import WalletTransactionCreate
+                from decimal import Decimal
+                
+                wallet_service = WalletService(current_app.mongo.db)
+                user_service = UserService(current_app.mongo.db)
+                room_name = room_doc.get('name', 'Room')
+                asset_name = data.get('asset_name', 'Asset')
+                
                 for m in members:
                     stake = float(m.get('contribution_amount', 0) or 0)
                     share = profit_total * (stake / total_stake)
                     if share <= 0:
                         continue
-                    w = wallets.find_one({ 'user_id': m['user_id'] })
-                    if w:
-                        wallets.update_one({ '_id': w['_id'] }, { '$inc': { 'balance': share, 'total_returns': share }, '$set': { 'updated_at': _dt.utcnow() } })
+                    
+                    # Get user from Firebase UID
+                    user = user_service.get_user_by_firebase_uid(m['user_id'])
+                    if not user:
+                        continue
+                    
+                    # Get wallet
+                    wallet = wallet_service.get_wallet_by_user_id(user.id)
+                    if not wallet:
+                        continue
+                    
+                    # Update wallet balance
+                    success = wallet_service.update_wallet_balance(
+                        wallet.id,
+                        Decimal(str(share)),
+                        'return'
+                    )
+                    
+                    if success:
+                        # Create transaction record
+                        transaction_data = WalletTransactionCreate(
+                            user_id=user.id,
+                            wallet_id=wallet.id,
+                            type='return',
+                            amount=share,
+                            reference=f"STOP-{room_id[:8].upper()}-{rec_id[:8].upper()}-{user.id[:8].upper()}",
+                            description=f'Investment return from {room_name} - {asset_name}',
+                            room_id=room_id,
+                            room_name=room_name
+                        )
+                        
+                        transaction = wallet_service.create_transaction(transaction_data)
+                        if transaction:
+                            wallet_service.update_transaction_status(transaction.id, 'completed', _dt.utcnow())
 
                 # Optionally mark room as closed when all assets stopped
                 # Here we simply leave room open; frontend can call stop per asset as needed
@@ -373,13 +416,16 @@ def end_investment():
                 
                 if success:
                     # Create transaction record using WalletService
+                    room_name = room_doc.get("name", "Room")
                     transaction_data = WalletTransactionCreate(
                         user_id=user.id,  # Use MongoDB ObjectId, not Firebase UID
                         wallet_id=wallet.id,
                         type='return',
                         amount=dist['profit_share'],
                         reference=f"INV-END-{room_id[:8].upper()}-{user.id[:8].upper()}",
-                        description=f'Investment return from {room_doc.get("name", "Room")}'
+                        description=f'Investment return from {room_name}',
+                        room_id=room_id,
+                        room_name=room_name
                     )
                     
                     transaction = wallet_service.create_transaction(transaction_data)
@@ -393,28 +439,24 @@ def end_investment():
             else:
                 logger.error(f"No wallet found for user_id: {dist['user_id']}")
 
-        # Store final values in room before closing
-        final_analytics = analytics.find_one({'room_id': room_id})
-        final_value = current_value if final_analytics else invested_amount
-        
-        # Mark room as closed and store final values
-        rooms.update_one(
-            {'_id': __import__('bson').ObjectId(room_id)},
-            {
-                '$set': {
-                    'status': 'closed',
-                    'has_execution': False,
-                    'closed_at': _dt.utcnow(),
-                    'updated_at': _dt.utcnow(),
-                    'final_invested_amount': invested_amount,
-                    'final_portfolio_value': final_value,
-                    'final_profit': total_profit
-                }
-            }
-        )
-
         # Remove analytics for this room
         analytics.delete_one({'room_id': room_id})
+        
+        # Clean up related data before deleting room
+        # Delete room members (they've already received their profits)
+        db.room_members.delete_many({'room_id': room_id})
+        # Delete stop votes (no longer needed)
+        db.investment_stop_votes.delete_many({'room_id': room_id})
+        # Delete investment votes
+        db.investment_votes.delete_many({'room_id': room_id})
+        
+        # Delete the room completely since investment is ended and profits distributed
+        from app.services.room_service import RoomService
+        room_service = RoomService(current_app.mongo.db)
+        room_deleted = room_service.delete_room(room_id, current_user.id)
+        
+        if not room_deleted:
+            logger.warning(f"Failed to delete room {room_id} after ending investment")
 
         return jsonify({
             'success': True,

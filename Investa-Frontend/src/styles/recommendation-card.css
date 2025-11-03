@@ -225,6 +225,13 @@
   cursor: not-allowed;
 }
 
+.vote-button.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+}
+
 .vote-button.approve {
   background: #dcfce7;
   color: #166534;

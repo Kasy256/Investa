@@ -116,15 +116,18 @@ class ContributionService:
             
             # Create wallet transaction record
             from app.models.wallet import WalletTransactionCreate
+            # Get room name for the transaction
+            room = self.room_service.get_room_by_id(contribution.room_id)
+            room_name = room.name if room else None
             tx = self.wallet_service.create_transaction(WalletTransactionCreate(
                 user_id=contribution.user_id,
                 wallet_id=wallet.id,
                 type='contribution',
                 amount=Decimal(str(contribution.amount)),
                 reference=contribution.transaction_id,
-                description=f'Contribution to {contribution.room_id}',
+                description=f'Contribution to {room_name or contribution.room_id}',
                 room_id=contribution.room_id,
-                room_name=None
+                room_name=room_name
             ))
             if tx:
                 from datetime import datetime as _dt
