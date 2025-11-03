@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Link } from "react-router-dom"
 import { 
   Wallet as WalletIcon, 
@@ -115,7 +115,24 @@ const Wallet = ({ user }) => {
     return txn.type === filter
   })
 
-
+  // Calculate pending amount from transactions
+  const pendingAmount = useMemo(() => {
+    if (!transactions || transactions.length === 0) return 0
+    
+    // Sum pending withdrawal transactions (money pending to be withdrawn)
+    const pendingWithdrawals = transactions
+      .filter(t => t.status === 'pending' && t.type === 'withdrawal')
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+    
+    // Sum pending deposit transactions (money pending to be added)
+    const pendingDeposits = transactions
+      .filter(t => t.status === 'pending' && t.type === 'deposit')
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+    
+    // Pending = withdrawals pending (money locked) minus deposits pending (money incoming)
+    // For display, we show the net pending withdrawals (money waiting to be withdrawn)
+    return pendingWithdrawals
+  }, [transactions])
 
   const refreshWalletData = async () => {
     // Don't refresh if modals are open
@@ -217,7 +234,7 @@ const Wallet = ({ user }) => {
               </div>
               <div className="summary-card-content">
                 <div className="summary-card-label">Pending</div>
-                <div className="summary-card-value">{formatCurrency(0)}</div>
+                <div className="summary-card-value">{formatCurrency(pendingAmount)}</div>
               </div>
             </div>
             
@@ -227,17 +244,17 @@ const Wallet = ({ user }) => {
               </div>
               <div className="summary-card-content">
                 <div className="summary-card-label">Total Earnings</div>
-                <div className="summary-card-value">{formatCurrency(wallet.totalReturns)}</div>
+                <div className="summary-card-value">{formatCurrency(wallet.totalReturns || 0)}</div>
               </div>
             </div>
             
             <div className="summary-card">
               <div className="summary-card-icon spent">
-                <ArrowUpRight />
+                <ArrowDownLeft />
               </div>
               <div className="summary-card-content">
-                <div className="summary-card-label">Total Spent</div>
-                <div className="summary-card-value">{formatCurrency(wallet.totalWithdrawn)}</div>
+                <div className="summary-card-label">Total Deposited</div>
+                <div className="summary-card-value">{formatCurrency(wallet.totalDeposited || 0)}</div>
               </div>
             </div>
           </div>
